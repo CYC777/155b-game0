@@ -17,7 +17,7 @@ The user moves a cube around the board trying to knock balls into a cone
 	var cone;
 	var npc;
 
-	var endScene, endCamera, endText;
+	var endScene, endCamera, endText, loseScene, loseCamera;
 
 
 
@@ -29,7 +29,7 @@ The user moves a cube around the board trying to knock balls into a cone
 		    camera:camera}
 
 	var gameState =
-	     {score:0, health:10, scene:'main', camera:'none' }
+	     {score:0, health:0, scene:'main', camera:'none' }
 
 
 	// Here is the main game control
@@ -39,7 +39,19 @@ The user moves a cube around the board trying to knock balls into a cone
 
 
 
+function createLoseScene(){
+	loseScene = initScene();
+	loseText = createSkyBox('youlose.png',10);
+	//endText.rotateX(Math.PI);
+	loseScene.add(loseText);
+	var light1 = createPointLight();
+	light1.position.set(0,200,20);
+	loseScene.add(light1);
+	loseCamera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 1000 );
+	loseCamera.position.set(0,50,1);
+	loseCamera.lookAt(0,0,0);
 
+}
 	function createEndScene(){
 		endScene = initScene();
 		endText = createSkyBox('youwon.png',10);
@@ -61,6 +73,7 @@ The user moves a cube around the board trying to knock balls into a cone
       initPhysijs();
 			scene = initScene();
 			createEndScene();
+			createLoseScene();
 			initRenderer();
 			createMainScene();
 	}
@@ -108,16 +121,16 @@ The user moves a cube around the board trying to knock balls into a cone
 
 			npc = createBoxMesh2(0x0000ff,1,2,4);
 			npc.position.set(30,5,-30);
-      npc.addEventListener('collision',function(other_object){
-        if (other_object==avatar){
-          gameState.scene = 'youwon';
-        }
-      })
+			npc.addEventListener('collision',function(other_object){
+				if (other_object==avatar){
+					gameState.scene = 'youwon';
+				}
+			});
 			scene.add(npc);
 
-      var wall = createWall(0xffaa00,50,3,1);
-      wall.position.set(10,0,10);
-      scene.add(wall);
+            var wall = createWall(0xffaa00,50,3,1);
+            wall.position.set(10,0,10);
+            scene.add(wall);
 			//console.dir(npc);
 			//playGameMusic();
 
@@ -388,6 +401,14 @@ The user moves a cube around the board trying to knock balls into a cone
 			addBalls();
 			return;
 		}
+		if (gameState.scene == 'youlose' && event.key=='r') {
+			gameState.scene = 'main';
+			gameState.score = 0;
+			addBalls();
+			return;
+		}
+
+
 
 		// this is the regular scene
 		switch (event.key){
@@ -396,13 +417,12 @@ The user moves a cube around the board trying to knock balls into a cone
 			case "s": controls.bwd = true; break;
 			case "a": controls.left = true; break;
 			case "d": controls.right = true; break;
-			case "r": controls.up = true; break;
+			// case "r": controls.up = true; break;
 			case "f": controls.down = true; break;
 			case "m": controls.speed = 30; break;
 			//move cam view to left
-			case "q": avatarCam.translateY(1);break;
-				console.log("wtf");break;
-			case "e": avatarCam.translateX(-10);break;
+			case "Q": avatarCam.translateX(-1);break;
+			case "E": avatarCam.translateX(1);break;
       		case " ": controls.fly = true;
           		console.log("space!!");
           		break;
@@ -432,11 +452,11 @@ The user moves a cube around the board trying to knock balls into a cone
 			case "s": controls.bwd   = false; break;
 			case "a": controls.left  = false; break;
 			case "d": controls.right = false; break;
-			case "r": controls.up    = false; break;
+			// case "r": controls.up    = false; break;
 			case "f": controls.down  = false; break;
 			case "m": controls.speed = 10; break;
             case " ": controls.fly = false; break;
-            case "h": controls.reset = false; break;
+            case "r": controls.reset = false; break;
 		}
 	}
 
@@ -483,7 +503,7 @@ The user moves a cube around the board trying to knock balls into a cone
 	function animate() {
 
 		requestAnimationFrame( animate );
-
+		if (gameState.health == 0) gameState.scene = 'youlose';
 		switch(gameState.scene) {
 
 			case "youwon":
@@ -500,7 +520,9 @@ The user moves a cube around the board trying to knock balls into a cone
 					renderer.render( scene, gameState.camera );
 				}
 				break;
-
+			case "youlose":
+				renderer.render( loseScene, loseCamera );
+				break;
 			default:
 			  console.log("don't know the scene "+gameState.scene);
 
